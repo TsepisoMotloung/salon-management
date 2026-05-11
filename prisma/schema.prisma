@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Booking {
+  id              String   @id @default(cuid())
+  fullname        String
+  phoneNumber     String
+  styleRequested  String
+  mediumReached   String   // WhatsApp | Facebook | TikTok | Instagram | Walk-in | Referral
+  bookingDate     DateTime
+  estimatedAmount Float?
+  notes           String?   @db.LongText
+  status          String   // Pending | Completed | Cancelled
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Client {
+  id            String        @id @default(cuid())
+  fullname      String
+  phoneNumber   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  transactions  Transaction[]
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  type            String   // money-in | money-out | investment | withdrawal
+  category        String
+  amount          Float
+  description     String?   @db.LongText
+  paymentMethod   String
+  transactionDate DateTime
+  clientId        String?
+  client          Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([transactionDate])
+  @@index([type])
+}
+
+model Inventory {
+  id        String   @id @default(cuid())
+  itemName  String
+  category  String
+  quantity  Int
+  costPrice Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
