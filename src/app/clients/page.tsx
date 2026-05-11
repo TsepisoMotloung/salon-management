@@ -82,18 +82,18 @@ export default function ClientsPage() {
               </div>
             ) : (
               filteredClients.map((client) => {
-                const totalSpent = client.transactions?.reduce((sum: number, t: any) => sum + (t.type === "money-in" ? t.amount : 0), 0) || 0;
+                const totalSpent = (client.transactions as any)?.reduce((sum: number, t: any) => sum + (t.type === "money-in" ? t.amount : 0), 0) || 0;
                 return (
                   <div key={client.id} className="card flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">
                       <h3 className="font-bold">{client.fullname}</h3>
                       <p className="text-sm text-gray-600">{client.phoneNumber}</p>
-                      <div className="flex gap-4 mt-2 text-xs">
+                        <div className="flex gap-4 mt-2 text-xs">
                         <span className="text-gray-600">
                           Total Spent: {formatCurrency(totalSpent)}
                         </span>
                         <span className="text-gray-600">
-                          Transactions: {client.transactions?.length || 0}
+                          Transactions: {(client.transactions as any)?.length || 0}
                         </span>
                       </div>
                     </div>

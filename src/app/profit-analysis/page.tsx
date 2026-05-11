@@ -219,7 +219,7 @@ export default function ProfitAnalysisPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : 0)} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (

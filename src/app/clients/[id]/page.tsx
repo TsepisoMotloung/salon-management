@@ -48,7 +48,7 @@ export default function ClientDetailPage() {
     );
   }
 
-  const totalSpent = client.transactions?.reduce((sum, t) => sum + (t.type === "money-in" ? t.amount : 0), 0) || 0;
+  const totalSpent = (client.transactions as any)?.reduce((sum: number, t: any) => sum + (t.type === "money-in" ? t.amount : 0), 0) || 0;
 
   return (
     <ProtectedLayout>
@@ -78,14 +78,14 @@ export default function ClientDetailPage() {
           </div>
           <div className="card">
             <p className="text-gray-600 text-sm mb-1">Transactions</p>
-            <h3 className="font-bold text-xl">{client.transactions?.length || 0}</h3>
+            <h3 className="font-bold text-xl">{(client.transactions as any)?.length || 0}</h3>
           </div>
         </div>
 
         {/* Transaction History */}
         <div className="card">
           <h2 className="font-bold text-lg mb-4">Transaction History</h2>
-          {client.transactions && client.transactions.length > 0 ? (
+          {client.transactions && (client.transactions as any[]).length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100 border-b">
@@ -97,7 +97,7 @@ export default function ClientDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {client.transactions.map((t: any) => (
+                  {(client.transactions as any[]).map((t: any) => (
                     <tr key={t.id} className="border-b hover:bg-gray-50">
                       <td className="p-3">{formatDate(t.transactionDate)}</td>
                       <td className="p-3">

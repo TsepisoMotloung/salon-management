@@ -43,10 +43,13 @@ export default function BookingsPage() {
     }
   };
 
-  const filteredBookings = bookings.filter((b) =>
-    b.fullname.toLowerCase().includes(search.toLowerCase()) ||
-    b.phoneNumber.includes(search)
-  );
+  const filteredBookings = bookings.filter((b) => {
+    const searchTerm = search.toLowerCase();
+    const fullnameMatch = b.fullname.toLowerCase().includes(searchTerm);
+    const phoneMatch = b.phoneNumber.includes(search);
+    const clientMatch = b.client?.fullname.toLowerCase().includes(searchTerm);
+    return fullnameMatch || phoneMatch || clientMatch;
+  });
 
   return (
     <ProtectedLayout>
@@ -100,6 +103,14 @@ export default function BookingsPage() {
                   <div className="flex-1">
                     <h3 className="font-bold">{booking.fullname}</h3>
                     <p className="text-sm text-gray-600">{booking.phoneNumber}</p>
+                    {booking.client && (
+                      <Link
+                        href={`/clients/${booking.client.id}`}
+                        className="text-sm text-blue-600 hover:text-blue-800 inline-block mt-1"
+                      >
+                        → Linked to {booking.client.fullname}
+                      </Link>
+                    )}
                     <div className="flex flex-wrap gap-2 mt-2 text-xs">
                       <span className="bg-gray-200 px-2 py-1 rounded">{booking.styleRequested}</span>
                       <span className="bg-gray-200 px-2 py-1 rounded">{formatDate(booking.bookingDate)}</span>

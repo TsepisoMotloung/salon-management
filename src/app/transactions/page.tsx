@@ -49,7 +49,8 @@ export default function TransactionsPage() {
 
   const filteredTransactions = transactions.filter((t) =>
     t.description?.toLowerCase().includes(search.toLowerCase()) ||
-    t.category.toLowerCase().includes(search.toLowerCase())
+    t.category.toLowerCase().includes(search.toLowerCase()) ||
+    t.client?.fullname.toLowerCase().includes(search.toLowerCase())
   );
 
   const stats = {
@@ -156,6 +157,14 @@ export default function TransactionsPage() {
                       }`} />
                       <div>
                         <p className="font-semibold">{transaction.category}</p>
+                        {transaction.client && (
+                          <Link
+                            href={`/clients/${transaction.client.id}`}
+                            className="text-sm text-blue-600 hover:text-blue-800 inline-block"
+                          >
+                            → {transaction.client.fullname}
+                          </Link>
+                        )}
                         {transaction.description && (
                           <p className="text-sm text-gray-600">{transaction.description}</p>
                         )}

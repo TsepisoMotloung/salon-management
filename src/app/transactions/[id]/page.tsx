@@ -3,7 +3,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ProtectedLayout from "@/components/ProtectedLayout";
-import { Transaction } from "@/types/index";
+import { Transaction, Client } from "@/types/index";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -14,6 +14,11 @@ export default function EditTransactionPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [transactionType, setTransactionType] = useState("");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientSearch, setClientSearch] = useState("");
+  const [clients, setClients] = useState<Client[]>([]);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
 
   useEffect(() => {
     fetchTransaction();
@@ -24,6 +29,11 @@ export default function EditTransactionPage() {
       const response = await fetch(`/api/transactions/${params.id}`);
       const data = await response.json();
       setTransaction(data);
+      setTransactionType(data.type);
+      if (data.client) {
+        setSelectedClient(data.client);
+        setClientSearch(data.client.fullname);
+      }
     } catch (err) {
       setError("Failed to fetch transaction");
     } finally {
@@ -46,6 +56,32 @@ export default function EditTransactionPage() {
     }
   };
 
+  const searchClients = async (query: string) => {
+    if (query.length === 0) {
+      setClients([]);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/clients?search=${query}`);
+      const data = await response.json();
+      setClients(data);
+    } catch (error) {
+      console.error("Failed to fetch clients:", error);
+    }
+  };
+
+  const handleClientSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setClientSearch(e.target.value);
+    searchClients(e.target.value);
+    setShowClientDropdown(true);
+  };
+
+  const handleSelectClient = (client: Client) => {
+    setSelectedClient(client);
+    setClientSearch(client.fullname);
+    setShowClientDropdown(false);
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -59,7 +95,7 @@ export default function EditTransactionPage() {
       description: formData.get("description"),
       paymentMethod: formData.get("paymentMethod"),
       transactionDate: formData.get("transactionDate"),
-      clientId: formData.get("clientId") || null,
+      clientId: transactionType === "money-in" ? selectedClient?.id : null,
     };
 
     try {
@@ -124,7 +160,18 @@ export default function EditTransactionPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Type</label>
-                  <select name="type" defaultValue={transaction.type} className="input-field">
+                  <select
+                    name="type"
+                    value={transactionType}
+                    onChange={(e) => {
+                      setTransactionType(e.target.value);
+                      if (e.target.value !== "money-in") {
+                        setSelectedClient(null);
+                        setClientSearch("");
+                      }
+                    }}
+                    className="input-field"
+                  >
                     <option value="money-in">Money In</option>
                     <option value="money-out">Money Out</option>
                     <option value="investment">Investment</option>
@@ -136,7 +183,7 @@ export default function EditTransactionPage() {
                   <label className="block text-sm font-medium mb-2">Category</label>
                   <select name="category" defaultValue={transaction.category} className="input-field">
                     <option value="">Select</option>
-                    {getCategories(transaction.type).map((cat) => (
+                    {getCategories(transactionType).map((cat) => (
                       <option key={cat} value={cat}>
                         {cat}
                       </option>
@@ -144,6 +191,62 @@ export default function EditTransactionPage() {
                   </select>
                 </div>
               </div>
+
+              {/* Client Selection for Money-In */}
+              {transactionType === "money-in" && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Client (optional)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search and select a client..."
+                      value={clientSearch}
+                      onChange={handleClientSearch}
+                      onFocus={() => setShowClientDropdown(true)}
+                      className="input-field"
+                    />
+                    {showClientDropdown && clients.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg max-h-64 overflow-y-auto">
+                        {clients.map((client) => (
+                          <button
+                            key={client.id}
+                            type="button"
+                            onClick={() => handleSelectClient(client)}
+                            className="w-full text-left p-3 hover:bg-gray-100 border-b last:border-b-0"
+                          >
+                            <div className="font-semibold">{client.fullname}</div>
+                            <div className="text-sm text-gray-600">
+                              {client.phoneNumber}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {selectedClient && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200 flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-sm">{selectedClient.fullname}</p>
+                        <p className="text-xs text-gray-600">
+                          {selectedClient.phoneNumber}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedClient(null);
+                          setClientSearch("");
+                        }}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
 
     const bookings = await prisma.booking.findMany({
       where,
+      include: { client: true },
       orderBy: { bookingDate: "desc" },
     });
 
@@ -53,14 +54,37 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    let clientId = body.clientId || null;
+
+    // If creating a new client with the booking
+    if (body.createNewClient && body.createNewClient.fullname) {
+      const newClient = await prisma.client.create({
+        data: {
+          fullname: body.createNewClient.fullname,
+          phoneNumber: body.createNewClient.phoneNumber,
+        },
+      });
+      clientId = newClient.id;
+    }
+
     const booking = await prisma.booking.create({
       data: {
-        ...body,
+        fullname: body.fullname,
+        phoneNumber: body.phoneNumber,
+        styleRequested: body.styleRequested,
+        mediumReached: body.mediumReached,
         bookingDate: new Date(body.bookingDate),
+        estimatedAmount: body.estimatedAmount,
+        notes: body.notes,
+        status: body.status || "Pending",
+        clientId: clientId,
       },
+      include: { client: true },
     });
+
     return NextResponse.json(booking, { status: 201 });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to create booking" },
       { status: 500 }

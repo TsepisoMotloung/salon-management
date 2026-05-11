@@ -5,11 +5,13 @@ export type Booking = {
   styleRequested: string;
   mediumReached: string;
   bookingDate: Date;
-  estimatedAmount?: number;
-  notes?: string;
+  estimatedAmount?: number | null;
+  notes?: string | null;
   status: "Pending" | "Completed" | "Cancelled";
+  clientId?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  client?: Client | null;
 };
 
 export type Client = {
@@ -18,6 +20,7 @@ export type Client = {
   phoneNumber: string;
   createdAt: Date;
   updatedAt: Date;
+  transactions?: Transaction[];
 };
 
 export type Transaction = {
@@ -25,12 +28,13 @@ export type Transaction = {
   type: "money-in" | "money-out" | "investment" | "withdrawal";
   category: string;
   amount: number;
-  description?: string;
+  description?: string | null;
   paymentMethod: string;
   transactionDate: Date;
-  clientId?: string;
+  clientId?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  client?: Client | null;
 };
 
 export type InventoryItem = {

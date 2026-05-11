@@ -27,6 +27,8 @@ model Booking {
   estimatedAmount Float?
   notes           String?   @db.LongText
   status          String   // Pending | Completed | Cancelled
+  clientId        String?
+  client          Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -38,6 +40,7 @@ model Client {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   transactions  Transaction[]
+  bookings      Booking[]
 }
 
 model Transaction {

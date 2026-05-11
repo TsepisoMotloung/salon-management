@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedLayout from "@/components/ProtectedLayout";
+import { Client } from "@/types/index";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -11,6 +12,10 @@ export default function NewTransactionPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [transactionType, setTransactionType] = useState("money-in");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientSearch, setClientSearch] = useState("");
+  const [clients, setClients] = useState<Client[]>([]);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
 
   const getCategories = (type: string): string[] => {
     switch (type) {
@@ -27,6 +32,32 @@ export default function NewTransactionPage() {
     }
   };
 
+  const searchClients = async (query: string) => {
+    if (query.length === 0) {
+      setClients([]);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/clients?search=${query}`);
+      const data = await response.json();
+      setClients(data);
+    } catch (error) {
+      console.error("Failed to fetch clients:", error);
+    }
+  };
+
+  const handleClientSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setClientSearch(e.target.value);
+    searchClients(e.target.value);
+    setShowClientDropdown(true);
+  };
+
+  const handleSelectClient = (client: Client) => {
+    setSelectedClient(client);
+    setClientSearch(client.fullname);
+    setShowClientDropdown(false);
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -40,7 +71,7 @@ export default function NewTransactionPage() {
       description: formData.get("description"),
       paymentMethod: formData.get("paymentMethod"),
       transactionDate: formData.get("transactionDate"),
-      clientId: formData.get("clientId") || null,
+      clientId: transactionType === "money-in" ? selectedClient?.id : null,
     };
 
     try {
@@ -89,7 +120,13 @@ export default function NewTransactionPage() {
                   <select
                     name="type"
                     value={transactionType}
-                    onChange={(e) => setTransactionType(e.target.value)}
+                    onChange={(e) => {
+                      setTransactionType(e.target.value);
+                      if (e.target.value !== "money-in") {
+                        setSelectedClient(null);
+                        setClientSearch("");
+                      }
+                    }}
                     required
                     className="input-field"
                   >
@@ -114,6 +151,62 @@ export default function NewTransactionPage() {
                   </select>
                 </div>
               </div>
+
+              {/* Client Selection for Money-In */}
+              {transactionType === "money-in" && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Client (optional)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search and select a client..."
+                      value={clientSearch}
+                      onChange={handleClientSearch}
+                      onFocus={() => setShowClientDropdown(true)}
+                      className="input-field"
+                    />
+                    {showClientDropdown && clients.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg max-h-64 overflow-y-auto">
+                        {clients.map((client) => (
+                          <button
+                            key={client.id}
+                            type="button"
+                            onClick={() => handleSelectClient(client)}
+                            className="w-full text-left p-3 hover:bg-gray-100 border-b last:border-b-0"
+                          >
+                            <div className="font-semibold">{client.fullname}</div>
+                            <div className="text-sm text-gray-600">
+                              {client.phoneNumber}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {selectedClient && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200 flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-sm">{selectedClient.fullname}</p>
+                        <p className="text-xs text-gray-600">
+                          {selectedClient.phoneNumber}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedClient(null);
+                          setClientSearch("");
+                        }}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -167,18 +260,6 @@ export default function NewTransactionPage() {
                   rows={3}
                   className="input-field"
                   placeholder="Add notes about this transaction..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Related Client (optional)
-                </label>
-                <input
-                  type="text"
-                  name="clientId"
-                  className="input-field"
-                  placeholder="Client ID (if applicable)"
                 />
               </div>
             </div>

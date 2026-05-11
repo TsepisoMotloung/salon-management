@@ -3,13 +3,22 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedLayout from "@/components/ProtectedLayout";
+import ClientSelector from "@/components/ClientSelector";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Client } from "@/types/index";
 
 export default function NewBookingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [useExistingClient, setUseExistingClient] = useState(false);
+
+  const handleClientSelect = (client: any) => {
+    setSelectedClient(client);
+    setUseExistingClient(true);
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -17,9 +26,18 @@ export default function NewBookingPage() {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const data = {
-      fullname: formData.get("fullname"),
-      phoneNumber: formData.get("phoneNumber"),
+    
+    // Use selected client data or form data
+    const fullname = useExistingClient 
+      ? selectedClient.fullname 
+      : formData.get("fullname");
+    const phoneNumber = useExistingClient 
+      ? selectedClient.phoneNumber 
+      : formData.get("phoneNumber");
+
+    const data: any = {
+      fullname,
+      phoneNumber,
       styleRequested: formData.get("styleRequested"),
       mediumReached: formData.get("mediumReached"),
       bookingDate: formData.get("bookingDate"),
@@ -28,7 +46,13 @@ export default function NewBookingPage() {
         : null,
       notes: formData.get("notes"),
       status: "Pending",
+      clientId: selectedClient?.id || null,
     };
+
+    // If creating new client with booking
+    if (!useExistingClient && selectedClient) {
+      data.createNewClient = selectedClient;
+    }
 
     try {
       const response = await fetch("/api/bookings", {
@@ -66,118 +90,135 @@ export default function NewBookingPage() {
               </div>
             )}
 
+            {/* Client Selection */}
             <div className="card space-y-4">
-              <h2 className="font-bold text-lg">Client Information</h2>
+              <h2 className="font-bold text-lg">Select or Create Client</h2>
+              
+              <ClientSelector 
+                onSelect={handleClientSelect}
+                placeholder="Search existing client or click + to create new..."
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  name="fullname"
-                  required
-                  className="input-field"
-                  placeholder="Enter full name"
-                />
-              </div>
+              {selectedClient && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold text-blue-900">{selectedClient.fullname}</p>
+                      <p className="text-sm text-blue-800">{selectedClient.phoneNumber}</p>
+                      {selectedClient.id && (
+                        <p className="text-xs text-blue-700 mt-1">✓ Existing client</p>
+                      )}
+                      {!selectedClient.id && (
+                        <p className="text-xs text-blue-700 mt-1">⊕ New client (will be created)</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedClient(null);
+                        setUseExistingClient(false);
+                      }}
+                      className="text-blue-600 hover:text-blue-800 font-semibold"
+                    >
+                      Change
+                    </button>
+                  </div>
+                </div>
+              )}
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  required
-                  className="input-field"
-                  placeholder="Enter phone number"
-                />
-              </div>
+              {!selectedClient && (
+                <div className="p-3 text-sm text-gray-600 bg-yellow-50 rounded border border-yellow-200">
+                  👆 Select an existing client or create a new one to continue
+                </div>
+              )}
             </div>
 
-            <div className="card space-y-4">
-              <h2 className="font-bold text-lg">Booking Details</h2>
+            {selectedClient && (
+              <>
+                <div className="card space-y-4">
+                  <h2 className="font-bold text-lg">Booking Details</h2>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Style Requested *
-                </label>
-                <input
-                  type="text"
-                  name="styleRequested"
-                  required
-                  className="input-field"
-                  placeholder="e.g., Braids, Hair cut, Perms"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Style Requested *
+                    </label>
+                    <input
+                      type="text"
+                      name="styleRequested"
+                      required
+                      className="input-field"
+                      placeholder="e.g., Braids, Hair cut, Perms"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Booking Date & Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="bookingDate"
-                    required
-                    className="input-field"
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Booking Date & Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        name="bookingDate"
+                        required
+                        className="input-field"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        How did they reach us? *
+                      </label>
+                      <select name="mediumReached" required className="input-field">
+                        <option value="">Select...</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                        <option value="Facebook">Facebook</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Walk-in">Walk-in</option>
+                        <option value="Referral">Referral</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Estimated Amount (R)
+                      </label>
+                      <input
+                        type="number"
+                        name="estimatedAmount"
+                        step="0.01"
+                        min="0"
+                        className="input-field"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      name="notes"
+                      rows={4}
+                      className="input-field"
+                      placeholder="Add any special notes..."
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    How did they reach us? *
-                  </label>
-                  <select name="mediumReached" required className="input-field">
-                    <option value="">Select...</option>
-                    <option value="WhatsApp">WhatsApp</option>
-                    <option value="Facebook">Facebook</option>
-                    <option value="TikTok">TikTok</option>
-                    <option value="Instagram">Instagram</option>
-                    <option value="Walk-in">Walk-in</option>
-                    <option value="Referral">Referral</option>
-                  </select>
+                <div className="flex gap-3">
+                  <button type="submit" disabled={loading} className="btn-primary disabled:opacity-50">
+                    {loading ? "Creating..." : "Create Booking"}
+                  </button>
+                  <Link href="/bookings" className="btn-secondary">
+                    Cancel
+                  </Link>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Estimated Amount (R)
-                  </label>
-                  <input
-                    type="number"
-                    name="estimatedAmount"
-                    step="0.01"
-                    min="0"
-                    className="input-field"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Notes
-                </label>
-                <textarea
-                  name="notes"
-                  rows={4}
-                  className="input-field"
-                  placeholder="Add any special notes..."
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button type="submit" disabled={loading} className="btn-primary disabled:opacity-50">
-                {loading ? "Creating..." : "Create Booking"}
-              </button>
-              <Link href="/bookings" className="btn-secondary">
-                Cancel
-              </Link>
-            </div>
+              </>
+            )}
           </form>
         </div>
       </div>
