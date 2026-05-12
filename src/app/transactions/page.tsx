@@ -28,10 +28,18 @@ export default function TransactionsPage() {
       query.append("dateTo", range.end.toISOString());
 
       const response = await fetch(`/api/transactions?${query.toString()}`);
+      
+      if (!response.ok) {
+        console.error("API error:", response.status);
+        setTransactions([]);
+        return;
+      }
+      
       const data = await response.json();
-      setTransactions(data);
+      setTransactions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch transactions:", error);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }

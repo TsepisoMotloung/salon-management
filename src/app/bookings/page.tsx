@@ -24,10 +24,18 @@ export default function BookingsPage() {
       if (status) query.append("status", status);
 
       const response = await fetch(`/api/bookings?${query.toString()}`);
+      
+      if (!response.ok) {
+        console.error("API error:", response.status, response.statusText);
+        setBookings([]);
+        return;
+      }
+      
       const data = await response.json();
-      setBookings(data);
+      setBookings(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch bookings:", error);
+      setBookings([]);
     } finally {
       setLoading(false);
     }

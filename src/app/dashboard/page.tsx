@@ -23,8 +23,14 @@ export default function DashboardPage() {
     const fetchStats = async () => {
       try {
         const response = await fetch("/api/dashboard/stats");
-        const data = await response.json();
-        setStats(data);
+        
+        if (!response.ok) {
+          console.error("API error:", response.status);
+          setStats(null);
+        } else {
+          const data = await response.json();
+          setStats(data);
+        }
 
         // Generate mock chart data
         const mockData = [];
@@ -40,6 +46,7 @@ export default function DashboardPage() {
         setChartData(mockData);
       } catch (error) {
         console.error("Failed to fetch stats:", error);
+        setStats(null);
       } finally {
         setLoading(false);
       }
