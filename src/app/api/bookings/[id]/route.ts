@@ -15,7 +15,6 @@ export async function GET(
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
-      include: { client: true },
     });
 
     if (!booking) {
@@ -53,7 +52,6 @@ export async function PUT(
         status: body.status,
         clientId: body.clientId,
       },
-      include: { client: true },
     });
     return NextResponse.json(booking);
   } catch (error) {

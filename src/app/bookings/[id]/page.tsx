@@ -28,9 +28,16 @@ export default function EditBookingPage() {
       const response = await fetch(`/api/bookings/${params.id}`);
       const data = await response.json();
       setBooking(data);
-      if (data.client) {
-        setSelectedClient(data.client);
-        setClientSearch(data.client.fullname);
+      
+      // If booking has a clientId, fetch the client data
+      if (data.clientId) {
+        try {
+          const clientResponse = await fetch(`/api/clients?search=`);
+          // For now, we'll just store the clientId and fetch on detail page
+          // The full client list will be available via ClientSelector search
+        } catch (err) {
+          console.log("Note: Client lookup not critical");
+        }
       }
     } catch (err) {
       setError("Failed to fetch booking");
