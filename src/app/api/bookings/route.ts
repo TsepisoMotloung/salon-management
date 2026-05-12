@@ -15,19 +15,16 @@ export async function GET(req: NextRequest) {
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
 
-    let where = {};
+    let where: any = {};
 
     if (status) {
-      where = { ...where, status };
+      where.status = status;
     }
 
     if (dateFrom && dateTo) {
-      where = {
-        ...where,
-        bookingDate: {
-          gte: new Date(dateFrom),
-          lte: new Date(dateTo),
-        },
+      where.bookingDate = {
+        gte: new Date(dateFrom),
+        lte: new Date(dateTo),
       };
     }
 
@@ -39,8 +36,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(bookings);
   } catch (error) {
+    console.error("Bookings GET error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch bookings" },
+      { error: "Failed to fetch bookings", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }
@@ -61,7 +59,7 @@ export async function POST(req: NextRequest) {
       const newClient = await prisma.client.create({
         data: {
           fullname: body.createNewClient.fullname,
-          phoneNumber: body.createNewClient.phoneNumber,
+          phoneNumber: body.createNewClient.phoneNumber || "",
         },
       });
       clientId = newClient.id;
@@ -69,13 +67,13 @@ export async function POST(req: NextRequest) {
 
     const booking = await prisma.booking.create({
       data: {
-        fullname: body.fullname,
-        phoneNumber: body.phoneNumber,
-        styleRequested: body.styleRequested,
-        mediumReached: body.mediumReached,
+        fullname: body.fullname || "",
+        phoneNumber: body.phoneNumber || "",
+        styleRequested: body.styleRequested || "",
+        mediumReached: body.mediumReached || "",
         bookingDate: new Date(body.bookingDate),
-        estimatedAmount: body.estimatedAmount,
-        notes: body.notes,
+        estimatedAmount: body.estimatedAmount || null,
+        notes: body.notes || null,
         status: body.status || "Pending",
         clientId: clientId,
       },
@@ -84,9 +82,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(booking, { status: 201 });
   } catch (error) {
-    console.error(error);
+    console.error("Bookings POST error:", error);
     return NextResponse.json(
-      { error: "Failed to create booking" },
+      { error: "Failed to create booking", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

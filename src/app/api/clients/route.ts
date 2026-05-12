@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     if (search) {
       where = {
         OR: [
-          { fullname: { contains: search, mode: "insensitive" } },
+          { fullname: { contains: search } },
           { phoneNumber: { contains: search } },
         ],
       };
@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
     const clients = await prisma.client.findMany({
       where,
       include: {
+        bookings: true,
         transactions: true,
       },
       orderBy: { createdAt: "desc" },
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(clients);
   } catch (error) {
+    console.error("Error fetching clients:", error);
     return NextResponse.json(
       { error: "Failed to fetch clients" },
       { status: 500 }
