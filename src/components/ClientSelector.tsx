@@ -23,25 +23,32 @@ export default function ClientSelector({
 
   useEffect(() => {
     if (search.length > 0) {
+      const fetchClients = async () => {
+        try {
+          const response = await fetch(`/api/clients?search=${search}`);
+          const data = await response.json();
+          setClients(data);
+        } catch (error) {
+          console.error("Failed to fetch clients:", error);
+        }
+      };
       fetchClients();
+    } else {
+      setClients([]);
     }
   }, [search]);
 
-  const fetchClients = async () => {
-    try {
-      const response = await fetch(`/api/clients?search=${search}`);
-      const data = await response.json();
-      setClients(data);
-    } catch (error) {
-      console.error("Failed to fetch clients:", error);
-    }
-  };
+
+
+
+  
 
   const handleSelectClient = (client: Client) => {
     onSelect(client);
     onClientChange?.(client);
     setSearch("");
     setIsOpen(false);
+    setClients([]);
   };
 
   const handleCreateClient = () => {
@@ -58,7 +65,7 @@ export default function ClientSelector({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setIsOpen(false); } }}>
       <div className="flex gap-2">
         <div className="flex-1 relative">
           <Search

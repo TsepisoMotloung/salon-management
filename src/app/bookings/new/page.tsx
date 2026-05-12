@@ -17,7 +17,7 @@ export default function NewBookingPage() {
 
   const handleClientSelect = (client: any) => {
     setSelectedClient(client);
-    setUseExistingClient(true);
+    setUseExistingClient(!!client.id);
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -46,7 +46,7 @@ export default function NewBookingPage() {
         : null,
       notes: formData.get("notes"),
       status: "Pending",
-      clientId: selectedClient?.id || null,
+      clientId: selectedClient?.id ?? null,
     };
 
     // If creating new client with booking
